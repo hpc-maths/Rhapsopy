@@ -1,14 +1,8 @@
 # Rhapsopy
 ___
 ### **R**eally **H**igh-order **A**da**P**tive coupling for **S**imulation **O**rchestration in **PY**thon
-### ****R**** **eally** **H**igh-order **A**da**P**tive coupling for **S**imulation **O**rchestration in **PY**thon
 
-*test*
-**test**
-***test***
-****test****
-*****test*****
-******test******
+**R**eally **H**igh-order **A**da**P**tive coupling for **S**imulation **O**rchestration in **PY**thon
 
 This pure Python package demonstrates the application of a high-order code coupling strategy. It enables an accurate resolution of transient multiphysics problems requiring the coupling of existing specialised codes, e.g. fluid flow solver, heat diffusion solver...
 

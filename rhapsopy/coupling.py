@@ -176,7 +176,7 @@ class Orchestrator:
     assert issubclass(self.interfaceSolver, BaseFixedPointSolver)
     self.solvers = [self.interfaceSolver(self.solverlogger) for i in range(4)] # we instantiate several solvers, as may be required for the embedded error estimate
 
-  def _step_forward(self, t, yn, dt, values_last_iterate, rtol=None):
+  def _step_forward(self, t, yn, dt, values_last_iterate,state_last_iterate=None, rtol=None):
     """ Performs one iteration of a code coupling step (Jacobi or Gauss-Seidel)
           --> computes the value of the overall state vector at time t+dt,
               starting from state y at time t. """
@@ -199,9 +199,12 @@ class Orchestrator:
             newy[isolv] = outs[isolv].y[:,-1]
 
             if self.gauss_seidel and ( it < len(self.subsystem_ordering)-1 ): # do not update after the last solve
-              ynp1_intermediaire = self.coupler.partialStateUpdate(isolv=isolv, y=yn, yk=newy[isolv])
+              if state_last_iterate is None:
+                ynp1_intermediaire = self.coupler.partialStateUpdate(isolv=isolv, y=yn, yk=newy[isolv])
+              else: # use the previous value (last fixed-point function call)
+                ynp1_intermediaire = self.coupler.partialStateUpdate(isolv=isolv, y=state_last_iterate, yk=newy[isolv])
               self._updatePredictors(t=t+dt, coupling_vars=self._getCouplingVars(t=t+dt, y=ynp1_intermediaire))
-              raise Exception('Current implementation of the Gauss-Seidel scheme messes up with the convergence and the prediction')
+              # raise Exception('Current implementation of the Gauss-Seidel scheme messes up with the convergence and the prediction')
               # If the coupling variables which are used by the next subsystem are dependent on this next system,
               # then this approach introduces an O(dt) error, since we use evaluate the coupling variables with
               # its state at time tn, not tn+dt...
@@ -277,6 +280,7 @@ class Orchestrator:
         global others
         ncalls=0
         others={}
+        others["ynp1_kp1"]=None
         def fixedPointFunction(coupling_vars_k, full_output=False):
             """ Fixed point function.
                 Inputs:
@@ -304,6 +308,7 @@ class Orchestrator:
             ncalls+=1
             ynp1_kp1 = self._step_forward(yn=y0, t=tn, dt=dt,
                                           values_last_iterate=coupling_vars_k,
+                                          state_last_iterate=others["ynp1_kp1"],
                                           rtol=rtol)
             coupling_vars_kp1 = self._getCouplingVars(t=tnp1, y=ynp1_kp1)
             others["ynp1_kp1"] = ynp1_kp1
